@@ -93,6 +93,75 @@ def _parse_dependencies_from_doc(doc: str) -> List[str]:
     return result
 
 
+def parse_inputs_spec(doc: str) -> List[Dict[str, Any]]:
+    """Parse an [inputs] section from the calculator docstring.
+
+    Returns a list of field dicts with keys like: name, type, enum (list), required (bool),
+    min (float), max (float), description (str), unit (str).
+
+    The parser is tolerant and heuristic-based, matching the documented style.
+    """
+    if not doc:
+        return []
+    lines = doc.splitlines()
+    inputs: List[Dict[str, Any]] = []
+    in_inputs = False
+    current: Optional[Dict[str, Any]] = None
+
+    def flush_current():
+        nonlocal current
+        if current:
+            inputs.append(current)
+            current = None
+
+    def parse_value(val: str) -> Any:
+        v = val.strip()
+        # booleans
+        if v.lower() in {"true", "false"}:
+            return v.lower() == "true"
+        # enums like ["a", "b"] or [a, b]
+        if v.startswith("[") and v.endswith("]"):
+            inner = v[1:-1]
+            parts = [p.strip().strip('"\'') for p in inner.split(",")]
+            return [p for p in parts if p]
+        # numbers
+        try:
+            if "." in v:
+                return float(v)
+            return int(v)
+        except ValueError:
+            pass
+        return v
+
+    for raw in lines:
+        line = raw.rstrip()
+        if not in_inputs:
+            if line.strip().lower() == "[inputs]":
+                in_inputs = True
+            continue
+        # Stop at next section header
+        if line.strip().startswith("[") and line.strip().endswith("]") and line.strip().lower() != "[inputs]":
+            flush_current()
+            break
+        if not line.strip():
+            # blank line => boundary between fields
+            flush_current()
+            continue
+        m_name = re.match(r"^\s*-\s*name:\s*(.+)$", line, re.IGNORECASE)
+        if m_name:
+            flush_current()
+            current = {"name": m_name.group(1).strip()}
+            continue
+        m_kv = re.match(r"^\s*([A-Za-z_][A-Za-z0-9_\-]*)\s*:\s*(.+)$", line)
+        if m_kv and current is not None:
+            key = m_kv.group(1).strip().lower()
+            val = parse_value(m_kv.group(2))
+            current[key] = val
+            continue
+    flush_current()
+    return inputs
+
+
 def _ensure_dependencies_installed(packages: List[str], calculator_name: Optional[str] = None) -> None:
     """Ensure the given packages are installed. Installs missing ones via pip.
 

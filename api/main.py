@@ -2,15 +2,17 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 import markdown as md
+import json
 
 from core.loader import (
     available_calculators,
     load_calculator_module,
     DependencyError,
     get_calculator_spec,
+    parse_inputs_spec,
 )
 
 app = FastAPI(title="Clinical Calculators API", version="0.1.0")
@@ -126,12 +128,12 @@ def calculator_doc_html(name: str):
 
 @app.get("/docs/calculators", response_class=HTMLResponse)
 def calculators_docs_index():
-        calcs = available_calculators()
-        items = "\n".join(
-                f"<li><a href='/calculators/{name}/doc.html'><strong>{name}</strong></a> — {title}</li>"
-                for name, title in sorted(calcs.items(), key=lambda x: x[0])
-        )
-        html = f"""
+    calcs = available_calculators()
+    items = "\n".join(
+        f"<li><strong>{name}</strong> — {title} [<a href='/calculators/{name}/doc.html'>docs</a>] [<a href='/calculators/{name}/form'>form</a>]</li>"
+        for name, title in sorted(calcs.items(), key=lambda x: x[0])
+    )
+    html = f"""
         <!DOCTYPE html>
         <html lang=\"en\">
             <head>
@@ -155,4 +157,92 @@ def calculators_docs_index():
             </body>
         </html>
         """
+    return HTMLResponse(html)
+
+
+@app.get("/calculators/{name}/form", response_class=HTMLResponse)
+def calculator_form(name: str):
+        spec = get_calculator_spec(name)
+        if not spec:
+            raise HTTPException(status_code=404, detail=f"Calculator '{name}' not found")
+        fields = parse_inputs_spec(spec.doc_config)
+        def input_control(f: Dict[str, Any]) -> str:
+            label = f.get("description") or f.get("name")
+            fname = f.get("name")
+            ftype = (f.get("type") or "string").lower()
+            required = "required" if f.get("required") else ""
+            placeholder = f.get("unit") or ""
+            if isinstance(f.get("enum"), list) and f["enum"]:
+                opts = "".join(f"<option value='{opt}'>{opt}</option>" for opt in f["enum"])
+                return f"<label>{label}: <select name='{fname}' {required}>{opts}</select></label>"
+            input_type = "number" if ftype in {"number", "float", "int"} else "text"
+            min_attr = f" min='{f['min']}'" if isinstance(f.get("min"), (int, float)) else ""
+            max_attr = f" max='{f['max']}'" if isinstance(f.get("max"), (int, float)) else ""
+            step_attr = " step='any'" if input_type == "number" else ""
+            return f"<label>{label}: <input name='{fname}' type='{input_type}' placeholder='{placeholder}' {required}{min_attr}{max_attr}{step_attr}></label>"
+        controls = "<br>\n".join(input_control(f) for f in fields)
+        html = f"""
+        <!DOCTYPE html>
+        <html lang=\"en\"><head>
+          <meta charset=\"utf-8\" />
+          <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
+          <title>{name} – Form</title>
+        </head><body>
+          <h1>{name} – Calculator</h1>
+          <form method=\"post\" action=\"/calculators/{name}/submit\">
+            {controls}
+            <br><br>
+            <button type=\"submit\">Calculate</button>
+          </form>
+          <p>Docs: <a href=\"/calculators/{name}/doc.html\">View documentation</a></p>
+        </body></html>
+        """
         return HTMLResponse(html)
+
+
+@app.post("/calculators/{name}/submit", response_class=HTMLResponse)
+async def calculator_submit(name: str, request: Request):
+    # Accept form or JSON payload and coerce simple numeric types
+    try:
+        ctype = request.headers.get("content-type", "")
+        if "application/json" in ctype:
+            params: Dict[str, Any] = await request.json()
+        else:
+            form = await request.form()
+            params = {k: v for k, v in form.items()}
+
+        spec = get_calculator_spec(name)
+        if not spec:
+            return HTMLResponse(f"<pre>Calculator '{name}' not found</pre>", status_code=404)
+
+        fields = parse_inputs_spec(spec.doc_config or "")
+        numeric_names: set[str] = set()
+        for f in fields:
+            ftype = str(f.get("type", "")).lower()
+            fname = f.get("name")
+            if fname and ftype in {"number", "float", "int"}:
+                numeric_names.add(fname)
+
+        for k, v in list(params.items()):
+            if k in numeric_names:
+                try:
+                    params[k] = float(v)  # best-effort float coercion
+                except Exception:
+                    pass
+    except Exception as e:
+        return HTMLResponse(f"<pre>Unexpected error while reading input: {str(e)}</pre>", status_code=500)
+
+    try:
+        mod = load_calculator_module(name)
+    except ModuleNotFoundError:
+        return HTMLResponse(f"<pre>Calculator '{name}' not found</pre>", status_code=404)
+    except DependencyError as de:
+        return HTMLResponse(f"<pre>{str(de)}</pre>", status_code=424)
+
+    try:
+        resp = mod.calculate(params)  # type: ignore[attr-defined]
+        data = resp.dict() if hasattr(resp, "dict") else resp
+        body = json.dumps(data, indent=2, ensure_ascii=False)
+        return HTMLResponse(f"<pre>{body}</pre>")
+    except Exception as e:
+        return HTMLResponse(f"<pre>Error: {str(e)}</pre>", status_code=400)
