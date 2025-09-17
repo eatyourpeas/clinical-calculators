@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clinical-calculators"
+version = "0.1.0"
+description = "Standardised clinical calculators as a Python package, CLI, and API"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+  { name = "eatyourpeas" }
+]
+license = { file = "LICENSE" }
+keywords = ["clinical", "calculators", "health", "fastapi", "cli"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+dependencies = [
+  "pydantic>=1.10,<2.0",
+  "fastapi>=0.103",
+  "uvicorn>=0.22",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.0",
+  "mypy>=1.0",
+  "sphinx>=7.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/eatyourpeas/clinical-calculators"
+
+[project.scripts]
+clinical-calculators = "cli.main:main"
+calc = "cli.main:main"
+
+[tool.setuptools]
+packages = [
+  "calculators",
+  "core",
+  "cli",
+  "api",
+]
