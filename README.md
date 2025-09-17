@@ -6,7 +6,7 @@ Each calculator occupies a single file in a calculators folder.
 
 ## Standardisation
 
-All calculators are standardised in that the top of the file (above all imports) contains docstrings that define all input parameters and the structure of the outputs. The structure of all the inputs and outputs is standardised and defined in a config folder, with an inputs.yaml, outputs.yaml and metadata.yaml. These define the structure that all the inputs and outputs take.
+All calculators are standardised in that the top of the file (above all imports) contains docstrings that define all input parameters and the structure of the outputs in .toml.
 
 For example, for a calculator that returns BMI the calculator file might be:
 
@@ -14,70 +14,134 @@ For example, for a calculator that returns BMI the calculator file might be:
 
 ```python
 """"
-INPUTS
-Name: BMI
-Purpose:
-    Calculate Body Mass Index (BMI) based on height and weight.
-Category:
-    Anthropometry
+# BMI Calculator Configuration (TOML Format)
+# =======================================
 
- Inputs:
-     - weight (float): Weight in kilograms (mandatory)
-     - height (float): Height in meters (mandatory)
-     - unit_system (str): 'metric' (default), or 'imperial' (weight in lbs, height in inches)
-     - age (int): Optional, for contextual analysis (not used in BMI itself)
+[inputs]
+name = "bmi"
+purpose = "Calculate Body Mass Index (BMI) based on height and weight."
+category = "Anthropometry"
 
-Validations:
-    - weight:
-       - max: 250
-       - min: 0
-    - height:
-       - max: 210
-       - min: 50
-    - unit_system in ['metric', 'imperial']
+# Input parameters
+weight = {
+    type = "number",
+    required = true,
+    unit = "kg",
+    description = "Weight in kilograms (mandatory)",
+    min = 0,
+    max = 250
+}
 
-Dependencies
-   - scipy
+height = {
+    type = "number",
+    required = true,
+    unit = "m",
+    description = "Height in meters (mandatory)",
+    min = 0.5,
+    max = 2.1
+}
 
-Outputs:
-    - result (float): BMI (kg/m²)
-    - working (str): Step-by-step explanation of calculation
-    - reference (str): Source of BMI formula (WHO, 2023)
-   - methodology:
-    - metadata:
-        - date: ISO datetime of calculation
-        - version: "1.0"
-        - author: "Clinical Computing Team"
-        - source: "WHO guidelines on BMI classification"
+unit_system = {
+    type = "string",
+    required = false,
+    default = "metric",
+    options = ["metric", "imperial"],
+    description = "Unit system: 'metric' (default), or 'imperial' (weight in lbs, height in inches)"
+}
 
-Examples:
-    >>> bmi = BMI(weight=70, height=1.75, unit_system='metric')
-    >>> print(bmi.calculate())
-    {
-        "result": 22.86,
-        "working": "BMI = weight / (height²) = 70 / (1.75²) = 70 / 3.0625 = 22.86",
-        "reference": "World Health Organization (2023). Body Mass Index (BMI) classification",
-        "metadata": {
-            "date": "2024-04-05T10:30:00Z",
-            "version": "1.0",
-            "author": "Clinical Computing Team"
-        }
+age = {
+    type = "number",
+    required = false,
+    description = "Optional age for contextual analysis (not used in BMI calculation)"
+}
+
+# Validation rules
+validations = {
+    "weight" = { min = 0, max = 250 },
+    "height" = { min = 0.5, max = 2.1 },
+    "unit_system" = { allowed_values = ["metric", "imperial"] }
+}
+
+# Dependencies
+dependencies = [
+    "scipy"  # Optional: if used for advanced analysis (e.g., BMI vs age trends)
+]
+
+# Output structure
+[outputs]
+result = {
+    type = "number",
+    description = "Calculated BMI (kg/m²)",
+    example = 22.86
+}
+
+working = {
+    type = "string",
+    description = "Step-by-step explanation of the calculation",
+    example = "BMI = weight / (height²) = 70 / (1.75²) = 70 / 3.0625 = 22.86"
+}
+
+reference = {
+    type = "string",
+    description = "Source of BMI formula and classification",
+    example = "World Health Organization (2023). Body Mass Index (BMI) classification"
+}
+
+methodology = {
+    type = "string",
+    description = "Formula used: weight (kg) / height (m)²",
+    example = "weight (kg) / height (m)²"
+}
+
+metadata = {
+    type = "object",
+    fields = {
+        date = { type = "string", format = "iso8601", example = "2024-04-05T10:30:00Z" },
+        version = { type = "string", default = "1.0" },
+        author = { type = "string", example = "Clinical Computing Team" },
+        source = { type = "string", example = "WHO guidelines on BMI classification" }
     }
+}
 
-Note:
-    - BMI does not account for body composition or muscle mass.
-    - For clinical use, consult a physician.
+# Interpretations (for downstream use)
+interpretation_lay = {
+    type = "string",
+    example = "This BMI is within the normal range"
+}
 
-OUTPUTS
+interpretation_clinician = {
+    type = "string",
+    example = "This BMI is within the normal range"
+}
 
-result: 22.86
-units: kg/m2
-reference: World Health Organisation
-methodology: weight (kg) / height (m)^2
-working: BMI = weight / (height²) = 70 / (1.75²) = 70 / 3.0625 = 22.86
-interpretation_lay: This BMI is within the normal range
-interpretation_clinician: This BMI is within the normal range
+# Examples
+examples = """
+>>> bmi = BMI(weight=70, height=1.75, unit_system='metric')
+>>> print(bmi.calculate())
+{
+    "result": 22.86,
+    "working": "BMI = weight / (height²) = 70 / (1.75²) = 70 / 3.0625 = 22.86",
+    "reference": "World Health Organization (2023). Body Mass Index (BMI) classification",
+    "metadata": {
+        "date": "2024-04-05T10:30:00Z",
+        "version": "1.0",
+        "author": "Clinical Computing Team"
+    }
+}
+"""
 
+# Notes and warnings
+notes = [
+    "BMI does not account for body composition or muscle mass.",
+    "For clinical use, consult a physician.",
+    "This calculation does not include body fat percentage or lean mass."
+]
+
+# Metadata
+version = "1.0"
+author = "Clinical Computing Team"
+date_generated = "2024-04-05"
+source = "World Health Organization (2023)"
 """"
 ```
 
@@ -85,7 +149,7 @@ Outputs should include the result, units (if applicable), any references, any in
 
 Metadata should include the date and time of request, language, IP address if relevant.
 
-Each calculator has a name that identifies it in the CLI/API/package and have parameters defined in the docstrings, following the structure in the yaml files. 
+Each calculator has a name that identifies it in the CLI/API/package and have parameters defined in the docstrings. 
 
 ## Validation
 
@@ -93,11 +157,11 @@ Validation is compatible with FastAPI and fast API request and response classes 
 
 ## Instantiation
 
-Whichever way the calculator is accessed, the requests and responses follow the same pattern - all inputs are validated against the structure provided in the yaml files using the specific names and inputs defined in the calculator file. There is a cli folder, an api folder and a `main.py`
+Whichever way the calculator is accessed, the requests and responses follow the same pattern - all inputs are validated against the structure provided in the .toml defined in the calculator file. There is a cli folder, an api folder and a `main.py`
 
 ## Useage
 
-Calling each function should involve only a single function call, with the parameters as defined in the docstring of the relevant calculator file, in the structure defined in the yaml file. The response similarly should follow the same structure as defined in the yaml, using the content from the docstrings, coupled with the metadata which are generic to all requests.
+Calling each function should involve only a single function call, with the parameters as defined in the docstring of the relevant calculator file. The response similarly should follow the same structure as defined in the .toml coupled with the metadata which are generic to all requests.
 
 ## Documentation
 
