@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 
 class CalculationResponse(BaseModel):
     result: Any = Field(..., description="The main result of the calculation.")
@@ -7,3 +7,4 @@ class CalculationResponse(BaseModel):
     interpretation: Optional[str] = Field(None, description="Interpretation of the result.")
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata about the calculation.")
     reference: Optional[str] = Field(None, description="Reference or source for the calculation.")
+    tags: Optional[list] = Field(None, description="Tags associated with the calculation.")

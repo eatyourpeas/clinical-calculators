@@ -154,4 +154,5 @@ def calculate(params: BMIRequest | dict) -> CalculationResponse:
     interpretation=interp,
     reference="WHO 2023 Guidelines",
     metadata=build_metadata("bmi"),
+    tags=["bmi", "body mass index", "weight", "height", "anthropometry"]
   )
