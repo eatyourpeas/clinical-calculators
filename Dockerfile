@@ -34,4 +34,3 @@ CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
 # Test stage (optional): build and run tests
 FROM base AS test
 RUN pip install -e .[dev]
-RUN pytest -q

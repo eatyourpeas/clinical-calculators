@@ -60,7 +60,7 @@ from core.request.request import CalculatorRequest
 from pydantic import Field, root_validator
 
 class BMIRequest(CalculatorRequest):
-  unit_system: Literal["kg/m2", "lb/in2"]
+  unit_system: Literal["", "lb/in2"]
   weight: float = Field(..., gt=0, description="Weight in kg or lb (UCUM)")
   height: float = Field(..., gt=0, description="Height in m or in (UCUM)")
   # ...validators...
@@ -74,7 +74,7 @@ All units should use [UCUM](https://ucum.org/trac) codes for clarity and interop
 
 - Weight: `kg` (UCUM: `kg`), `lb` (UCUM: `[lb_av]`)
 - Height: `m` (UCUM: `m`), `in` (UCUM: `[in_i]`)
-- Unit system: `kg/m2` for metric, `lb/in2` for imperial
+- Unit system: `metric` for metric, `imperial` for imperial
 
 This standardization ensures compatibility with healthcare and scientific systems.
 
