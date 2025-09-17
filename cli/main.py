@@ -5,7 +5,7 @@ import json
 import sys
 from typing import Any, Dict
 
-from core.loader import available_calculators, load_calculator_module
+from core.loader import available_calculators, load_calculator_module, DependencyError
 
 
 def run_list(_: argparse.Namespace) -> int:
@@ -32,6 +32,9 @@ def run_calc(ns: argparse.Namespace) -> int:
     except ModuleNotFoundError:
         print(f"Calculator '{name}' not found", file=sys.stderr)
         return 1
+    except DependencyError as de:
+        print(str(de), file=sys.stderr)
+        return 3
 
     if not hasattr(mod, "calculate"):
         print(f"Calculator '{name}' has no calculate() function", file=sys.stderr)

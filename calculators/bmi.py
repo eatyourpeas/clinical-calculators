@@ -26,8 +26,7 @@
   required: true
   description: Unit system for input (metric or imperial)
 
-[dependencies]
-  scipy
+
 
 ## 📂 Output (TOML-style)
 
