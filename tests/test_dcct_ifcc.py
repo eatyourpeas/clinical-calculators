@@ -18,7 +18,7 @@ def test_ifcc_to_dcct():
     assert abs(resp.result - 7.0) < 0.05
     assert resp.working["formula"] == "DCCT = (IFCC / 10.929) + 2.15"
     assert "%" in resp.working["calculation"]
-    assert resp.interpretation.endswith("% DCCT")
+    assert resp.interpretation.endswith("Diabetes")
 
 def test_invalid_unit():
     with pytest.raises(ValueError):
