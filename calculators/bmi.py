@@ -81,6 +81,9 @@ from __future__ import annotations
 
 from typing import Literal, Optional, TypedDict
 
+# Import the generic CalculationResponse
+from core.response.response import CalculationResponse
+
 from pydantic import BaseModel, Field, root_validator
 
 from core.metadata import build_metadata
@@ -112,12 +115,7 @@ class BMIRequest(BaseModel):
     return values
 
 
-class BMIResponse(BaseModel):
-    result: float
-    working: str
-    interpretation: Literal["Underweight", "Normal", "Overweight", "Obese"]
-    reference: str = "WHO 2023 Guidelines"
-    metadata: dict
+
 
 
 def _classify_bmi(bmi: float) -> Literal["Underweight", "Normal", "Overweight", "Obese"]:
@@ -130,27 +128,28 @@ def _classify_bmi(bmi: float) -> Literal["Underweight", "Normal", "Overweight", 
     return "Obese"
 
 
-def calculate(params: BMIRequest | dict) -> BMIResponse:
-    """Calculate BMI from request parameters.
+def calculate(params: BMIRequest | dict) -> CalculationResponse:
+  """Calculate BMI from request parameters.
 
-    Accepts either a BMIRequest or a plain dict (which will be validated).
-    """
-    req = params if isinstance(params, BMIRequest) else BMIRequest(**params)
-    if req.unit_system == "imperial":
-        weight_kg = req.weight * 0.45359237
-        height_m = req.height * 0.0254
-    else:
-        weight_kg = req.weight
-        height_m = req.height
+  Accepts either a BMIRequest or a plain dict (which will be validated).
+  """
+  req = params if isinstance(params, BMIRequest) else BMIRequest(**params)
+  if req.unit_system == "imperial":
+    weight_kg = req.weight * 0.45359237
+    height_m = req.height * 0.0254
+  else:
+    weight_kg = req.weight
+    height_m = req.height
 
-    bmi = round(weight_kg / (height_m ** 2), 2)
-    interp = _classify_bmi(bmi)
-    working = (
-        f"Weight: {weight_kg:.2f} kg, Height: {height_m:.2f} m → BMI = {bmi:.2f}"
-    )
-    return BMIResponse(
-        result=bmi,
-        working=working,
-        interpretation=interp,
-        metadata=build_metadata("bmi"),
-    )
+  bmi = round(weight_kg / (height_m ** 2), 2)
+  interp = _classify_bmi(bmi)
+  working = (
+    f"Weight: {weight_kg:.2f} kg, Height: {height_m:.2f} m → BMI = {bmi:.2f}"
+  )
+  return CalculationResponse(
+    result=bmi,
+    working=working,
+    interpretation=interp,
+    reference="WHO 2023 Guidelines",
+    metadata=build_metadata("bmi"),
+  )

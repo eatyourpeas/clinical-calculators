@@ -147,11 +147,40 @@ API:
 """
 ```
 
-Outputs should include the result, units (if applicable), any references, any interpretation if relevant (one for clinicians, another for lay people), working.
 
-Metadata should include the date and time of request, language, IP address if relevant.
+## 📂 Standardised Response Model
 
-Each calculator has a name that identifies it in the CLI/API/package and have parameters defined in the docstrings.
+All calculators return a response using the generic `CalculationResponse` class, defined in `core/response/response.py`. This Pydantic model is used by all calculators to ensure a consistent API, CLI, and package interface.
+
+### CalculationResponse fields
+
+- `result`: The main result of the calculation (type: any)
+- `working`: Step-by-step calculation or details (type: dict or string)
+- `interpretation`: Interpretation of the result (e.g., clinical meaning)
+- `reference`: Reference or source for the calculation (e.g., guidelines)
+- `metadata`: Additional metadata (timestamp, version, calculator_name, etc.)
+
+Example usage in a calculator:
+
+```python
+from core.response.response import CalculationResponse
+
+def calculate(params: ...):
+  # ... calculation logic ...
+  return CalculationResponse(
+    result=...,  # main result
+    working=...,  # step-by-step or details
+    interpretation=...,  # clinical meaning
+    reference="...",  # source or guideline
+    metadata={...},  # extra info
+  )
+```
+
+This ensures all calculators have a standard output structure, making integration and usage consistent across API, CLI, and as a Python package.
+
+Metadata should include the date and time of request, language, and any other relevant context.
+
+Each calculator has a name that identifies it in the CLI/API/package and has parameters defined in the docstrings.
 
 ## Structure
 
@@ -213,3 +242,20 @@ Testing is done with pytest. There is a separate folder of unittests, with one f
 ## Dependencies
 
 These are defined in the docstrings but would need adding to `requirements.txt`. There are base dependencies for all calculators that include pytest, and pydoc/sphinx/mypy for docstring parsing.
+
+## Creating a new calculator
+
+Use the BMI file as an example
+
+1. create a new file in the calculators folder
+2. Create a .toml docstring at the top of the file - this defines the inputs and the outputs
+3. Create a FastAPI pydantic Request and Response class containing any custom validators. The Response class must have the same keys as the BMIResponse example
+4. Define a `calculate` function
+5. Create some tests in the `tests` folder
+
+## Using the calculator
+
+The project is dockerised so can be run with:
+`s/dev.sh up`
+
+### Using the API
