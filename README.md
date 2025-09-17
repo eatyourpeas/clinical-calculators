@@ -44,9 +44,39 @@ To manage Docker in development, use:
 ./s/dev.sh down    # stop containers
 ```
 
+
 ## Standardisation
 
-All calculators are standardised in the top of the file (above all imports) contains docstrings that define all input parameters and the structure of the outputs in .toml.
+All calculators are standardised in the top of the file (above all imports) with docstrings that define all input parameters and the structure of the outputs in .toml.
+
+### CalculatorRequest Base Class
+
+All calculator request models should subclass the generic `CalculatorRequest` base class, defined in `core/request/request.py`. This provides a consistent structure for request models and a place for shared logic or metadata. Each calculator should define its own fields and validation logic by subclassing `CalculatorRequest`.
+
+#### Example (BMI):
+
+```python
+from core.request.request import CalculatorRequest
+from pydantic import Field, root_validator
+
+class BMIRequest(CalculatorRequest):
+  unit_system: Literal["kg/m2", "lb/in2"]
+  weight: float = Field(..., gt=0, description="Weight in kg or lb (UCUM)")
+  height: float = Field(..., gt=0, description="Height in m or in (UCUM)")
+  # ...validators...
+```
+
+This ensures all calculators have a standard request structure, while allowing for custom fields and validation.
+
+### UCUM Codes for Units
+
+All units should use [UCUM](https://ucum.org/trac) codes for clarity and interoperability. For example:
+
+- Weight: `kg` (UCUM: `kg`), `lb` (UCUM: `[lb_av]`)
+- Height: `m` (UCUM: `m`), `in` (UCUM: `[in_i]`)
+- Unit system: `kg/m2` for metric, `lb/in2` for imperial
+
+This standardization ensures compatibility with healthcare and scientific systems.
 
 For example, for a calculator that returns BMI the calculator file might be:
 
@@ -249,7 +279,7 @@ Use the BMI file as an example
 
 1. create a new file in the calculators folder
 2. Create a .toml docstring at the top of the file - this defines the inputs and the outputs
-3. Create a FastAPI pydantic Request and Response class containing any custom validators. The Response class must have the same keys as the BMIResponse example
+3. Create a FastAPI pydantic Request and Response class containing any custom validators. The Response class must have the same keys as the CalculatorResponse class. The request class must override the CalculatorRequest class. The units (if required) should reference the [UCUM](https://ucum.org/docs) standard.
 4. Define a `calculate` function
 5. Create some tests in the `tests` folder
 
