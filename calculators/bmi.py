@@ -2,32 +2,41 @@
 """
 # BMI Calculator
 
-## 📂 Configuration (TOML-style in docstring)
+## 📂 Description
+
+[Description]
+Calculate Body Mass Index (BMI) based on weight and height.
+Uses the formula: BMI = weight (kg) / (height (m))^2
+Supports both metric (kg, m) and imperial (lb, in) units.
+
+## 📂 Configuration
+
+### Inputs
 
 [inputs]
-- name: weight
-  type: number
-  unit: kg (UCUM: kg) | lb (UCUM: [lb_av])
-  required: true
-  min: 0.0
-  max: 500.0
-  description: Patient's weight (in kg or lb)
+  - name: weight
+    type: number
+    unit: kg (UCUM: kg) | lb (UCUM: [lb_av])
+    required: true
+    min: 0.0
+    max: 500.0
+    description: Patient's weight (in kg or lb)
 
-- name: height
-  type: number
-  unit: m (UCUM: m) | in (UCUM: [in_i])
-  required: true
-  min: 0.0
-  max: 3.0
-  description: Patient's height (in meters or inches)
+  - name: height
+    type: number
+    unit: m (UCUM: m) | in (UCUM: [in_i])
+    required: true
+    min: 0.0
+    max: 3.0
+    description: Patient's height (in meters or inches)
 
-- name: unit_system
-  type: string
-  enum: ["metric", "imperial"]
-  required: true
-  description: Unit system for input (UCUM codes: metric, imperial)
+  - name: unit_system
+    type: string
+    enum: ["metric", "imperial"]
+    required: true
+    description: Unit system for input (UCUM codes: metric, imperial)
 
-## 📂 Output (TOML-style)
+### Outputs
 
 [result]
   type: number
@@ -60,10 +69,13 @@
 
 ## 📂 Usage (CLI or API)
 
-CLI: 
-  calc bmi --weight 70 --height 1.75 --unit-system metric
+>**CLI**: 
+  ```console
+    calc bmi --weight 70 --height 1.75 --unit-system metric
+  ```
 
-API:
+>**API**:
+```console
   POST /calculate
   {
     "calculator": "bmi",
@@ -73,7 +85,7 @@ API:
       "unit_system": "metric"
     }
   }
-
+  ```
 """
 
 from __future__ import annotations

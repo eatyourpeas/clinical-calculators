@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 import importlib
 import importlib.util
 import inspect
@@ -9,7 +8,7 @@ import re
 import subprocess
 import sys
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 
 _INSTALL_CACHE: set[str] = set()
@@ -264,3 +263,21 @@ def available_calculators() -> Dict[str, str]:
             title = name
         results[name] = title
     return results
+
+def parse_description(doc: str) -> str:
+    """Parse a [description] section from the calculator docstring."""
+    if not doc:
+        return ""
+    lines = doc.splitlines()
+    in_desc = False
+    desc_lines = []
+    for line in lines:
+        if not in_desc:
+            if line.strip().lower() == "[description]":
+                in_desc = True
+            continue
+        # Stop at next section header
+        if line.strip().startswith("[") and line.strip().endswith("]") and line.strip().lower() != "[description]":
+            break
+        desc_lines.append(line.strip())
+    return " ".join(l for l in desc_lines if l).strip()

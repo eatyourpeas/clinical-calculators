@@ -86,7 +86,14 @@ For example, for a calculator that returns BMI the calculator file might be:
 """
 # BMI Calculator
 
-## 📂 Configuration (TOML-style in docstring)
+## 📂 Description
+
+[Description]
+Calculate Body Mass Index (BMI) based on weight and height.
+Uses the formula: BMI = weight (kg) / (height (m))^2
+Supports both metric (kg, m) and imperial (lb, in) units.
+
+## 📂 Configuration
 
 [inputs]
 - name: weight

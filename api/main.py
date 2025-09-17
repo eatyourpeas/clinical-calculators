@@ -13,6 +13,7 @@ from core.loader import (
     DependencyError,
     get_calculator_spec,
     parse_inputs_spec,
+    parse_description,
 )
 
 app = FastAPI(title="Clinical Calculators API", summary="Clinical calculators, standardised and reusable.", version="0.1.0")
@@ -99,6 +100,7 @@ def calculator_doc_html(name: str):
         spec = get_calculator_spec(name)
         if not spec:
                 raise HTTPException(status_code=404, detail=f"Calculator '{name}' not found")
+        desc = parse_description(spec.doc_config)
         body_md = spec.doc_config or f"# {name}\n\nNo documentation available."
         body_html = md.markdown(body_md, extensions=["fenced_code", "tables", "toc"])
         html = f"""
@@ -119,7 +121,7 @@ def calculator_doc_html(name: str):
                 </style>
             </head>
             <body>
-                <div class=\"container\">{body_html}</div>
+                    <div class=\"container\">{body_html}</div>
             </body>
         </html>
         """

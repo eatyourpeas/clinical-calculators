@@ -1,20 +1,31 @@
 """
 # DCCT/IFCC Converter
 
-## 📂 Configuration (TOML-style in docstring)
+## 📂 Description
+
+[Description]
+Convert between DCCT (%) and IFCC (mmol/mol) units.
+This calculator uses the NGSP/IFCC 2023 conversion formulas:
+- DCCT (%) to IFCC (mmol/mol): IFCC = (DCCT - 2.15) × 10.929
+- IFCC (mmol/mol) to DCCT (%): DCCT = (IFCC / 10.929) + 2.15
+
+## 📂 Configuration
+
+### Inputs
 
 [inputs]
 - name: value
   type: number
   required: true
   description: Value to convert (either DCCT % or IFCC mmol/mol)
+
 - name: input_unit
   type: string
   enum: ["dcct", "ifcc"]
   required: true
   description: Input unit: 'dcct' for DCCT (%), 'ifcc' for IFCC (mmol/mol)
 
-## 📂 Output (TOML-style)
+### Outputs
 
 [result]
   type: number
@@ -43,6 +54,19 @@
 - value must be > 0
 - input_unit must be one of: dcct, ifcc
 
+## 📂 Usage (CLI or API)
+>**CLI**:
+  ```console
+  calc dcct_ifcc --input-unit dcct --value 7.0
+  calc dcct_ifcc --input-unit ifcc --value 53.0
+  ```
+
+>**API**:
+  ```console
+  POST /calculate/dcct_ifcc
+  Body: {"input_unit": "dcct", "value": 7.0}  
+  or {"input_unit": "ifcc", "value": 53.0}
+```
 """
 
 from __future__ import annotations
