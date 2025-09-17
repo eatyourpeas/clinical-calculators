@@ -81,7 +81,7 @@ def calculate(params: DCCTIFCCRequest | dict) -> CalculationResponse:
       "formula": "IFCC = (DCCT - 2.15) × 10.929",
       "calculation": f"({req.value} - 2.15) × 10.929 = {result} mmol/mol"
     }
-    interpretation = f"{req.value}% DCCT = {result} mmol/mol IFCC"
+    interpretation = f"{req.value}% DCCT = {result} mmol/mol IFCC: {normal_range(result, 'ifcc')}"
   else:
     # IFCC (mmol/mol) to DCCT (%): DCCT = (IFCC / 10.929) + 2.15
     result = round((req.value / 10.929) + 2.15, 2)
@@ -89,7 +89,7 @@ def calculate(params: DCCTIFCCRequest | dict) -> CalculationResponse:
       "formula": "DCCT = (IFCC / 10.929) + 2.15",
       "calculation": f"({req.value} / 10.929) + 2.15 = {result}%"
     }
-    interpretation = f"{req.value} mmol/mol IFCC = {result}% DCCT"
+    interpretation = f"{req.value} mmol/mol IFCC = {result}% DCCT: {normal_range(result, 'dcct')}"
   return CalculationResponse(
     result=result,
     working=working,
@@ -98,3 +98,21 @@ def calculate(params: DCCTIFCCRequest | dict) -> CalculationResponse:
     metadata=build_metadata("dcct_ifcc"),
     tags=["dcct", "ifcc", "hba1c", "conversion"]
   )
+
+def normal_range(value: float, unit: str) -> str:
+  """Return interpretation of the result."""
+  if unit == "dcct":
+    if value <= 6:
+      return "Normal"
+    elif value < 6.5:
+      return "Prediabetes"
+    else:
+      return "Diabetes"
+  elif unit == "ifcc":
+    if value < 42:
+      return "Normal"
+    elif value < 48:
+      return "Prediabetes"
+    else:
+      return "Diabetes"
+  return "Unknown"

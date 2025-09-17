@@ -15,7 +15,7 @@ from core.loader import (
     parse_inputs_spec,
 )
 
-app = FastAPI(title="Clinical Calculators API", version="0.1.0")
+app = FastAPI(title="Clinical Calculators API", summary="Clinical calculators, standardised and reusable.", version="0.1.0")
 
 
 @app.get("/health")
