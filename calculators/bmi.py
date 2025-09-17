@@ -1,3 +1,4 @@
+
 """
 # BMI Calculator
 
@@ -6,7 +7,7 @@
 [inputs]
 - name: weight
   type: number
-  unit: kg | lb
+  unit: kg (UCUM: kg) | lb (UCUM: [lb_av])
   required: true
   min: 0.0
   max: 500.0
@@ -14,7 +15,7 @@
 
 - name: height
   type: number
-  unit: m | in
+  unit: m (UCUM: m) | in (UCUM: [in_i])
   required: true
   min: 0.0
   max: 3.0
@@ -22,11 +23,9 @@
 
 - name: unit_system
   type: string
-  enum: ["metric", "imperial"]
+  enum: ["kg/m2", "lb/in2"]
   required: true
-  description: Unit system for input (metric or imperial)
-
-
+  description: Unit system for input (UCUM codes: kg/m2 for metric, lb/in2 for imperial)
 
 ## 📂 Output (TOML-style)
 
@@ -84,28 +83,31 @@ from typing import Literal, Optional, TypedDict
 # Import the generic CalculationResponse
 from core.response.response import CalculationResponse
 
-from pydantic import BaseModel, Field, root_validator
+
+from pydantic import Field, root_validator
+from core.request.request import CalculatorRequest
 
 from core.metadata import build_metadata
 
 
-class BMIRequest(BaseModel):
+
+class BMIRequest(CalculatorRequest):
   # Place unit_system first so validation can depend on it
-  unit_system: Literal["metric", "imperial"]
-  weight: float = Field(..., gt=0)
-  height: float = Field(..., gt=0)
+  unit_system: Literal["kg/m2", "lb/in2"]
+  weight: float = Field(..., gt=0, description="Weight in kg or lb (UCUM)")
+  height: float = Field(..., gt=0, description="Height in m or in (UCUM)")
 
   @root_validator
   def validate_ranges(cls, values):
     unit = values.get("unit_system")
     w = values.get("weight")
     h = values.get("height")
-    if unit == "metric":
+    if unit == "kg/m2":
       if w is not None and not (0 < w <= 500):
         raise ValueError("weight (kg) must be in (0, 500]")
       if h is not None and not (0 < h <= 3.0):
         raise ValueError("height (m) must be in (0, 3.0]")
-    elif unit == "imperial":
+    elif unit == "lb/in2":
       if w is not None and not (0 < w <= 1100):
         raise ValueError("weight (lb) must be in (0, 1100]")
       if h is not None and not (0 < h <= 118):
