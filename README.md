@@ -289,3 +289,47 @@ The project is dockerised so can be run with:
 `s/dev.sh up`
 
 ### Using the API
+
+```console
+curl -X POST http://localhost:8000/calculate \
+  -H "Content-Type: application/json" \
+  -d '{"calculator": "dcct_ifcc", "params": {"input_unit": "dcct", "value": 7.0}}'
+```
+
+result:
+
+```console
+{"result":53.01,"working":{"formula":"IFCC = (DCCT - 2.15) × 10.929","calculation":"(7.0 - 2.15) × 10.929 = 53.01 mmol/mol"},"interpretation":"7.0% DCCT = 53.01 mmol/mol IFCC","metadata":{"timestamp":"2025-09-17T20:15:44.600436+00:00","version":"0.1.0","calculator_name":"dcct_ifcc"},"reference":"NGSP/IFCC 2023 Guidelines","tags":["dcct","ifcc","hba1c","conversion"]}
+```
+
+### Used as a dependency in a python project
+
+```python
+from calculators.dcct_ifcc import calculate
+
+# DCCT to IFCC
+result = calculate({"input_unit": "dcct", "value": 7.0})
+print(result)
+
+# Result
+# result=53.01 working={'formula': 'IFCC = (DCCT - 2.15) × 10.929', 'calculation': '(7.0 - 2.15) × 10.929 = 53.01 mmol/mol'} interpretation='7.0% DCCT = 53.01 mmol/mol IFCC' metadata={'timestamp': '2025-09-17T20:28:11.246634+00:00', 'version': '0.1.0', 'calculator_name': 'dcct_ifcc'} reference='NGSP/IFCC 2023 Guidelines' tags=['dcct', 'ifcc', 'hba1c', 'conversion']
+
+# IFCC to DCCT
+result = calculate({"input_unit": "ifcc", "value": 53.0})
+print(result)
+
+# Result
+# result=7.0 working={'formula': 'DCCT = (IFCC / 10.929) + 2.15', 'calculation': '(53.0 / 10.929) + 2.15 = 7.0%'} interpretation='53.0 mmol/mol IFCC = 7.0% DCCT' metadata={'timestamp': '2025-09-17T20:29:13.826204+00:00', 'version': '0.1.0', 'calculator_name': 'dcct_ifcc'} reference='NGSP/IFCC 2023 Guidelines' tags=['dcct', 'ifcc', 'hba1c', 'conversion']
+```
+
+### Used on the command line as a CLI
+
+```command
+calc run dcct_ifcc --params '{"input_unit": "dcct", "value": 7.0}'
+```
+
+gives:
+
+```console
+{"result": 53.01, "working": {"formula": "IFCC = (DCCT - 2.15) \u00d7 10.929", "calculation": "(7.0 - 2.15) \u00d7 10.929 = 53.01 mmol/mol"}, "interpretation": "7.0% DCCT = 53.01 mmol/mol IFCC", "metadata": {"timestamp": "2025-09-17T20:21:42.432281+00:00", "version": "0.1.0", "calculator_name": "dcct_ifcc"}, "reference": "NGSP/IFCC 2023 Guidelines", "tags": ["dcct", "ifcc", "hba1c", "conversion"]}
+```
