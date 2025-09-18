@@ -16,10 +16,10 @@ docker push ${azure_tag}
 
 # Deploy to Azure Container Apps
 
-# az containerapp revision copy \
-#     --name ${AZURE_LIVE_APP_NAME} \
-#     --resource-group ${AZURE_RESOURCE_GROUP} \
-#     --image ${azure_tag} \
-#     --query 'properties.provisioningState'
+az containerapp revision copy \
+    --name ${AZURE_LIVE_APP_NAME} \
+    --resource-group ${AZURE_RESOURCE_GROUP} \
+    --image ${azure_tag} \
+    --query 'properties.provisioningState'
 
-# # Deploy to the docs is handled in the GitHub workflow itself
+# Deploy to the docs is handled in the GitHub workflow itself
