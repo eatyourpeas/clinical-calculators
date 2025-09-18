@@ -1,12 +1,15 @@
 from __future__ import annotations
-
+import json
+import markdown as md
 from typing import Any, Dict
 
+# Third-party imports
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
-import markdown as md
-import json
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
 
+# local imports
 from core.loader import (
     available_calculators,
     load_calculator_module,
@@ -16,7 +19,17 @@ from core.loader import (
     parse_description,
 )
 
-app = FastAPI(title="Clinical Calculators API", summary="Clinical calculators, standardised and reusable.", version="0.1.0")
+class ReverseProxyRootPathMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        forwarded_prefix = request.headers.get("X-Forwarded-Prefix", "")
+        if forwarded_prefix:
+            request.scope["root_path"] = forwarded_prefix
+        response = await call_next(request)
+        return response
+
+
+app = FastAPI(title="Clinical Calculators API", summary="Clinical calculators, standardised and reusable.", version="0.0.1")
+app.add_middleware(ReverseProxyRootPathMiddleware)
 
 
 @app.get("/health")
@@ -48,8 +61,8 @@ def home():
                             <li><a href=\"/docs\">Swagger UI</a> (interactive API docs)</li>
                             <li><a href=\"/redoc\">ReDoc</a> (alternative API docs)</li>
                             <li><a href=\"/openapi.json\">OpenAPI JSON</a></li>
-                            <li><a href=\"/docs/calculators\">Calculators documentation index</a></li>
-                            <li><a href=\"/calculators\">List calculators (JSON)</a></li>
+                            <li><a href=\"/list.html\">Calculators documentation index</a></li>
+                            <li><a href=\"/list\">List calculators (JSON)</a></li>
                         </ul>
                     </body>
                 </html>
@@ -57,12 +70,12 @@ def home():
         )
 
 
-@app.get("/calculators")
+@app.get("/list")
 def list_calculators():
     return available_calculators()
 
 
-@app.get("/calculators/{name}/doc")
+@app.get("/{name}/doc")
 def calculator_doc(name: str):
     spec = get_calculator_spec(name)
     if not spec:
@@ -95,7 +108,7 @@ def calculate(payload: Dict[str, Any]):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@app.get("/calculators/{name}/doc.html", response_class=HTMLResponse)
+@app.get("/{name}/doc.html", response_class=HTMLResponse)
 def calculator_doc_html(name: str):
         spec = get_calculator_spec(name)
         if not spec:
@@ -128,11 +141,11 @@ def calculator_doc_html(name: str):
         return HTMLResponse(html)
 
 
-@app.get("/docs/calculators", response_class=HTMLResponse)
+@app.get("/list.html", response_class=HTMLResponse)
 def calculators_docs_index():
     calcs = available_calculators()
     items = "\n".join(
-        f"<li><strong>{name}</strong> — {title} [<a href='/calculators/{name}/doc.html'>docs</a>] [<a href='/calculators/{name}/form'>form</a>]</li>"
+        f"<li><strong>{name}</strong> — {title} [<a href='/{name}/doc.html'>docs</a>] [<a href='/{name}/form'>form</a>]</li>"
         for name, title in sorted(calcs.items(), key=lambda x: x[0])
     )
     html = f"""
@@ -162,7 +175,7 @@ def calculators_docs_index():
     return HTMLResponse(html)
 
 
-@app.get("/calculators/{name}/form", response_class=HTMLResponse)
+@app.get("/{name}/form", response_class=HTMLResponse)
 def calculator_form(name: str):
         spec = get_calculator_spec(name)
         if not spec:
@@ -202,7 +215,7 @@ def calculator_form(name: str):
         return HTMLResponse(html)
 
 
-@app.post("/calculators/{name}/submit", response_class=HTMLResponse)
+@app.post("/{name}/submit", response_class=HTMLResponse)
 async def calculator_submit(name: str, request: Request):
     # Accept form or JSON payload and coerce simple numeric types
     try:
