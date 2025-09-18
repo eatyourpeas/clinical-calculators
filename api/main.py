@@ -8,6 +8,11 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
+from fastapi.openapi.docs import (
+    get_swagger_ui_html,
+    get_redoc_html,
+    get_swagger_ui_oauth2_redirect_html,
+)
 
 # local imports
 from core.loader import (
@@ -28,8 +33,44 @@ class ReverseProxyRootPathMiddleware(BaseHTTPMiddleware):
         return response
 
 
-app = FastAPI(title="Clinical Calculators API", summary="Clinical calculators, standardised and reusable.", version="0.0.1")
+app = FastAPI(
+    title="Clinical Calculators API",
+    summary="Clinical calculators, standardised and reusable.",
+    version="0.0.1",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url="/openapi.json",
+    servers=[{"url": "/clinical-calculators"}],
+)
 app.add_middleware(ReverseProxyRootPathMiddleware)
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon(request: Request):
+    root_path = request.scope.get("root_path", "")
+    return HTMLResponse(url=f"{root_path}/static/favicon.ico")
+
+# Prefix-aware Swagger UI
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui_html(request: Request) -> HTMLResponse:
+    root_path = request.scope.get("root_path", "")
+    return get_swagger_ui_html(
+        openapi_url=f"{root_path}{app.openapi_url}",
+        title=f"{app.title} - Swagger UI",
+        oauth2_redirect_url=f"{root_path}/docs/oauth2-redirect",
+    )
+
+@app.get("/docs/oauth2-redirect", include_in_schema=False)
+async def swagger_ui_redirect() -> HTMLResponse:
+    return get_swagger_ui_oauth2_redirect_html()
+
+# Prefix-aware ReDoc
+@app.get("/redoc", include_in_schema=False)
+async def custom_redoc_html(request: Request) -> HTMLResponse:
+    root_path = request.scope.get("root_path", "")
+    return get_redoc_html(
+        openapi_url=f"{root_path}{app.openapi_url}",
+        title=f"{app.title} - ReDoc",
+    )
 
 
 @app.get("/health")
@@ -61,7 +102,7 @@ def home():
                             <li><a href=\"/docs\">Swagger UI</a> (interactive API docs)</li>
                             <li><a href=\"/redoc\">ReDoc</a> (alternative API docs)</li>
                             <li><a href=\"/openapi.json\">OpenAPI JSON</a></li>
-                            <li><a href=\"/list.html\">Calculators documentation index</a></li>
+                            <li><a href=\"/list.html\">List Calculators (HTML)</a></li>
                             <li><a href=\"/list\">List calculators (JSON)</a></li>
                         </ul>
                     </body>
